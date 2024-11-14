@@ -1,7 +1,7 @@
 package constants
 
 const (
-	PARSER_SERVER_PORT = 55051 + iota
+	ParserServerPort = 55051 + iota
 	BOTS_SERVER_PORT
 	SCHEDULER_SERVER_PORT
 	TIMERS_SERVER_PORT
@@ -21,7 +21,7 @@ const (
 
 var (
 	ServerPorts = []int{
-		PARSER_SERVER_PORT,
+		ParserServerPort,
 		BOTS_SERVER_PORT,
 		SCHEDULER_SERVER_PORT,
 		TIMERS_SERVER_PORT,

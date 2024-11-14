@@ -15,8 +15,7 @@ import (
 )
 
 type Opts struct {
-	AppName string
-
+	AppName   string
 	WithAudit bool
 }
 

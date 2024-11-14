@@ -9,7 +9,7 @@ import (
 )
 
 func NewParser(env string) parser.ParserClient {
-	serverAddress := createClientAddr(env, "parser", constants.PARSER_SERVER_PORT)
+	serverAddress := createClientAddr(env, "parser", constants.ParserServerPort)
 
 	conn, err := grpc.Dial(
 		serverAddress,
