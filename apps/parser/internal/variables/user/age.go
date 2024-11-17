@@ -5,7 +5,7 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/satont/twir/apps/parser/internal/types"
-	"github.com/satont/twir/apps/parser/pkg/helpers"
+	"github.com/satont/twir/apps/parser/pkg/date"
 )
 
 var Age = &types.Variable{
@@ -32,11 +32,11 @@ var Age = &types.Variable{
 		if user == nil {
 			result.Result = "Cannot find user on twitch."
 		} else {
-			result.Result = helpers.Duration(
+			result.Result = date.Duration(
 				user.CreatedAt.Time,
-				&helpers.DurationOpts{
+				&date.DurationOpts{
 					UseUtc: true,
-					Hide: helpers.DurationOptsHide{
+					Hide: date.DurationOptsHide{
 						Seconds: true,
 					},
 				},

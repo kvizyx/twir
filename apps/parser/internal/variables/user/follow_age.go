@@ -6,7 +6,7 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/satont/twir/apps/parser/internal/types"
-	"github.com/satont/twir/apps/parser/pkg/helpers"
+	"github.com/satont/twir/apps/parser/pkg/date"
 )
 
 var FollowAge = &types.Variable{
@@ -46,11 +46,11 @@ var FollowAge = &types.Variable{
 		if followedAt == nil {
 			result.Result = "not a follower"
 		} else {
-			result.Result = helpers.Duration(
+			result.Result = date.Duration(
 				*followedAt,
-				&helpers.DurationOpts{
+				&date.DurationOpts{
 					UseUtc: true,
-					Hide: helpers.DurationOptsHide{
+					Hide: date.DurationOptsHide{
 						Minutes: false,
 						Seconds: true,
 					},

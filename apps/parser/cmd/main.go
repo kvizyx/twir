@@ -18,6 +18,7 @@ import (
 	"github.com/lib/pq"
 	commands_bus "github.com/satont/twir/apps/parser/internal/commands-bus"
 	"github.com/satont/twir/apps/parser/internal/nats"
+	parser2 "github.com/satont/twir/apps/parser/internal/parser"
 	task_queue "github.com/satont/twir/apps/parser/internal/task-queue"
 	variables_bus "github.com/satont/twir/apps/parser/internal/variables-bus"
 	cfg "github.com/satont/twir/libs/config"
@@ -180,6 +181,15 @@ func main() {
 			Services: s,
 		},
 	)
+
+	s.CommandsParser = parser2.NewParser(
+		parser2.Params{
+			Services:        s,
+			DefaultCommands: commands.DefaultCommands(),
+			Variables:       variablesService,
+		},
+	)
+
 	commandsService := commands.New(
 		&commands.Opts{
 			Services:         s,
@@ -195,7 +205,7 @@ func main() {
 	variablesBus.Subscribe()
 	defer variablesBus.Unsubscribe()
 
-	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", constants.PARSER_SERVER_PORT))
+	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", constants.ParserServerPort))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}

@@ -5,7 +5,7 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/satont/twir/apps/parser/internal/types"
-	"github.com/satont/twir/apps/parser/pkg/helpers"
+	"github.com/satont/twir/apps/parser/pkg/date"
 )
 
 var Uptime = &types.Variable{
@@ -23,10 +23,10 @@ var Uptime = &types.Variable{
 			return &result, nil
 		}
 
-		result.Result = helpers.Duration(
-			stream.StartedAt, &helpers.DurationOpts{
+		result.Result = date.Duration(
+			stream.StartedAt, &date.DurationOpts{
 				UseUtc: true,
-				Hide:   helpers.DurationOptsHide{},
+				Hide:   date.DurationOptsHide{},
 			},
 		)
 

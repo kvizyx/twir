@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lib/pq"
+	"github.com/guregu/null/v5"
 	"github.com/samber/lo"
-	"github.com/satont/twir/apps/parser-new/internal/commands/model"
 	"github.com/satont/twir/apps/parser-new/internal/entity"
+	alertrepo "github.com/satont/twir/apps/parser-new/internal/repositories/alert"
 	commandrepo "github.com/satont/twir/apps/parser-new/internal/repositories/command"
 	dbmodel "github.com/satont/twir/libs/gomodels"
 	genericcacher "github.com/twirapp/twir/libs/cache/generic-cacher"
@@ -27,7 +27,12 @@ const (
 )
 
 type CommandParser struct {
-	commandRepo  commandrepo.RepositoryContract
+	eventsClient     events.EventsClient
+	websocketsClient websockets.WebsocketClient
+
+	commandRepo commandrepo.RepositoryContract
+	alertRepo   alertrepo.RepositoryContract
+
 	commandCache *genericcacher.GenericCacher[[]dbmodel.ChannelsCommands]
 }
 
@@ -61,8 +66,6 @@ func (cp *CommandParser) Execute(
 		return nil, nil
 	}
 
-	candidate := input[1:]
-
 	commands, err := cp.commandCache.Get(ctx, broadcasterID)
 	if err != nil {
 		return nil, fmt.Errorf(
@@ -70,7 +73,7 @@ func (cp *CommandParser) Execute(
 		)
 	}
 
-	command, found := cp.Find(candidate, commands)
+	command, found := cp.Find(input[1:], commands)
 	if !found {
 		return nil, nil
 	}
@@ -84,7 +87,7 @@ func (cp *CommandParser) Execute(
 	}
 
 	go func() {
-		_ = cp.sendPostEvents()
+		_ = cp.sendPostEvents(context.Background())
 	}()
 
 	// ...
@@ -103,47 +106,35 @@ func (cp *CommandParser) filter(
 				break
 			}
 
-			cp.commandRepo.UpdateByID()
-
-			err = c.services.Gorm.
-				WithContext(ctx).
-				Where(`"id" = ?`, cmd.Command.ID).
-				Model(&model.ChannelsCommands{}).
-				Updates(
-					map[string]interface{}{
-						"enabled": false,
-					},
-				).Error
-			if err != nil {
-				c.services.Logger.Sugar().Error(err)
-				return nil, err
+			if err := cp.commandRepo.UpdateByID(
+				ctx,
+				command.ID,
+				commandrepo.UpdateDTO{
+					IsEnabled: false,
+				},
+			); err != nil {
+				return false, fmt.Errorf("disable command: %w", err)
 			}
 
 			if err := cp.commandCache.Invalidate(ctx, data.BroadcasterUserId); err != nil {
-				c.services.Logger.Sugar().Error(err)
-				return nil, err
+				return false, fmt.Errorf("invalidate commands cache: %w", err)
 			}
 
 		case dbmodel.ChannelCommandExpiresTypeDelete:
 			if command.Default {
 				break
 			}
-			err = c.services.Gorm.
-				WithContext(ctx).
-				Where(`"id" = ?`, cmd.Command.ID).
-				Delete(&model.ChannelsCommands{}).Error
-			if err != nil {
-				c.services.Logger.Sugar().Error(err)
-				return nil, err
+
+			if err := cp.commandRepo.DeleteByID(ctx, command.ID); err != nil {
+				return false, fmt.Errorf("delete command by id: %w", err)
 			}
 
-			if err := c.services.CommandsCache.Invalidate(ctx, data.BroadcasterUserId); err != nil {
-				c.services.Logger.Sugar().Error(err)
-				return nil, err
+			if err := cp.commandCache.Invalidate(ctx, data.BroadcasterUserId); err != nil {
+				return false, fmt.Errorf("invalidate commands cache: %w", err)
 			}
 		}
 
-		return nil, nil
+		return false, nil
 	}
 
 	if command.OnlineOnly {
@@ -239,43 +230,63 @@ func (cp *CommandParser) filter(
 	return permitted, nil
 }
 
-func (cp *CommandParser) sendPostEvents() error {
-	c.services.GrpcClients.Events.CommandUsed(
-		context.Background(),
+type PostEventsData struct {
+	MessageID     string
+	BroadcasterID string
+
+	CommandID          entity.CommandID
+	CommandName        string
+	CommandIsDefault   bool
+	CommandDefaultName null.String
+
+	SenderID    string
+	SenderLogin string
+	SenderName  string
+}
+
+func (cp *CommandParser) sendPostEvents(ctx context.Context, data PostEventsData) error {
+	commandInput := strings.TrimSpace(data.Message.Text[len(cmd.FoundBy)+1:])
+
+	_, err := cp.eventsClient.CommandUsed(
+		ctx,
 		&events.CommandUsedMessage{
-			BaseInfo:           &events.BaseInfo{ChannelId: data.BroadcasterUserId},
-			CommandId:          cmd.Command.ID,
-			CommandName:        cmd.Command.Name,
-			CommandInput:       strings.TrimSpace(data.Message.Text[len(cmd.FoundBy)+1:]),
-			UserName:           data.ChatterUserLogin,
-			UserDisplayName:    data.ChatterUserName,
-			UserId:             data.ChatterUserId,
-			IsDefault:          cmd.Command.Default,
-			DefaultCommandName: cmd.Command.DefaultName.String,
-			MessageId:          data.MessageId,
+			BaseInfo: &events.BaseInfo{
+				ChannelId: data.BroadcasterID,
+			},
+			CommandId:          data.CommandID.String(),
+			CommandName:        data.CommandName,
+			CommandInput:       commandInput,
+			UserName:           data.SenderLogin,
+			UserDisplayName:    data.SenderName,
+			UserId:             data.SenderID,
+			IsDefault:          data.CommandIsDefault,
+			DefaultCommandName: data.CommandDefaultName.String,
+			MessageId:          data.MessageID,
 		},
 	)
-
-	alert := model.ChannelAlert{}
-	if err := c.services.Gorm.Where(
-		"channel_id = ? AND command_ids && ?",
-		data.BroadcasterUserId,
-		pq.StringArray{cmd.Command.ID},
-	).Find(&alert).Error; err != nil {
-		zap.S().Error(err)
-		return
+	if err != nil {
+		return fmt.Errorf("send command used event: %w", err)
 	}
 
-	if alert.ID == "" {
-		return
+	alert, err := cp.alertRepo.GetByCommandIDs(ctx, data.BroadcasterID, data.CommandID)
+	if err != nil {
+		if errors.Is(err, alertrepo.ErrAlertNotFound) {
+			return nil
+		}
+
+		return fmt.Errorf("find alert by command ids: %w", err)
 	}
-	c.services.GrpcClients.WebSockets.TriggerAlert(
-		context.Background(),
+
+	_, err = cp.websocketsClient.TriggerAlert(
+		ctx,
 		&websockets.TriggerAlertRequest{
-			ChannelId: data.BroadcasterUserId,
+			ChannelId: data.BroadcasterID,
 			AlertId:   alert.ID,
 		},
 	)
+	if err != nil {
+		return fmt.Errorf("send trigger alert request: %w", err)
+	}
 
 	return nil
 }

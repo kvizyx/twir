@@ -7,6 +7,8 @@ import (
 	"github.com/guregu/null/v5"
 )
 
+type CommandID = uuid.UUID
+
 type (
 	CommandCooldownType int
 	CommandExpireType   int
@@ -23,7 +25,7 @@ const (
 )
 
 type Command struct {
-	ID                        uuid.UUID
+	ID                        CommandID
 	Name                      string
 	Cooldown                  null.Int
 	CooldownType              CommandCooldownType

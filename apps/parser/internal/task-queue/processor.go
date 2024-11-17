@@ -11,7 +11,6 @@ import (
 	"gorm.io/gorm"
 )
 
-//goland:noinspection GoNameStartsWithPackageName
 const (
 	QueueDefault = "default"
 )

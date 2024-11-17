@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	ErrCommandNotFound = errors.New("command not found")
+	ErrCommandNotFound = errors.New("command is not found")
 )

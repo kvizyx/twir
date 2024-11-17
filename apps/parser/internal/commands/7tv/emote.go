@@ -10,7 +10,7 @@ import (
 	"github.com/lib/pq"
 	command_arguments "github.com/satont/twir/apps/parser/internal/command-arguments"
 	"github.com/satont/twir/apps/parser/internal/types"
-	"github.com/satont/twir/apps/parser/pkg/helpers"
+	"github.com/satont/twir/apps/parser/pkg/date"
 	model "github.com/satont/twir/libs/gomodels"
 	seventvintegration "github.com/twirapp/twir/libs/integrations/seventv"
 )
@@ -100,11 +100,11 @@ var EmoteFind = &types.DefaultCommand{
 		addedBy := fmt.Sprintf("%s", adderProfile.Username)
 		emoteLink := fmt.Sprintf("https://7tv.app/emotes/%s", foundEmote.Id)
 
-		addedAgo := helpers.Duration(
+		addedAgo := date.Duration(
 			time.UnixMilli(foundEmote.Timestamp),
-			&helpers.DurationOpts{
+			&date.DurationOpts{
 				UseUtc: true,
-				Hide: helpers.DurationOptsHide{
+				Hide: date.DurationOptsHide{
 					Seconds: true,
 				},
 			},

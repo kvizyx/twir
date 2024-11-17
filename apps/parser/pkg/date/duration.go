@@ -1,4 +1,4 @@
-package helpers
+package date
 
 import (
 	"fmt"
@@ -19,14 +19,14 @@ func dateDiff(a, b time.Time) (year, month, day, hour, min, sec int) {
 	h1, m1, s1 := a.Clock()
 	h2, m2, s2 := b.Clock()
 
-	year = int(y2 - y1)
+	year = y2 - y1
 	month = int(M2 - M1)
-	day = int(d2 - d1)
-	hour = int(h2 - h1)
-	min = int(m2 - m1)
-	sec = int(s2 - s1)
+	day = d2 - d1
+	hour = h2 - h1
+	min = m2 - m1
+	sec = s2 - s1
 
-	// Normalize negative values
+	// Normalize negative values.
 	if sec < 0 {
 		sec += 60
 		min--
@@ -40,7 +40,7 @@ func dateDiff(a, b time.Time) (year, month, day, hour, min, sec int) {
 		day--
 	}
 	if day < 0 {
-		// days in month:
+		// Days in month.
 		t := time.Date(y1, M1, 32, 0, 0, 0, 0, time.UTC)
 		day += 32 - t.Day()
 		month--
@@ -67,19 +67,19 @@ type DurationOpts struct {
 	Hide   DurationOptsHide
 }
 
-func Duration(t time.Time, opts *DurationOpts) string {
+func Duration(from time.Time, opts *DurationOpts) string {
 	if opts == nil {
 		opts = &DurationOpts{}
 	}
 
-	date := strings.Builder{}
-	currentTime := time.Now()
+	var date strings.Builder
+
 	var y, m, d, h, mi, s int
 
 	if opts.UseUtc == true {
-		y, m, d, h, mi, s = dateDiff(t, currentTime.UTC())
+		y, m, d, h, mi, s = dateDiff(from, time.Now().UTC())
 	} else {
-		y, m, d, h, mi, s = dateDiff(t, currentTime)
+		y, m, d, h, mi, s = dateDiff(from, time.Now())
 	}
 
 	if y > 0 && !opts.Hide.Years {

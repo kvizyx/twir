@@ -33,6 +33,7 @@ type ParseContextEmote struct {
 }
 
 type ParseContext struct {
+	Message   twitch.TwitchChatMessage
 	MessageId string
 	Channel   *ParseContextChannel
 	Sender    *ParseContextSender
