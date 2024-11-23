@@ -47,12 +47,22 @@ export function newRouter() {
 				{
 					path: '/dashboard/commands/:system',
 					component: () => import('../features/commands/commands.vue'),
-					meta: { neededPermission: ChannelRolePermissionEnum.ViewCommands },
+					meta: { neededPermission: ChannelRolePermissionEnum.ViewCommands, noPadding: true },
+				},
+				{
+					path: '/dashboard/commands/:system/:id',
+					component: () => import('../features/commands/commands-edit.vue'),
+					meta: { neededPermission: ChannelRolePermissionEnum.ManageCommands, noPadding: true },
 				},
 				{
 					path: '/dashboard/timers',
-					component: () => import('../pages/Timers.vue'),
-					meta: { neededPermission: ChannelRolePermissionEnum.ViewTimers },
+					component: () => import('../features/timers/timers.vue'),
+					meta: { neededPermission: ChannelRolePermissionEnum.ViewTimers, noPadding: true },
+				},
+				{
+					path: '/dashboard/timers/:id',
+					component: () => import('../features/timers/timers-edit.vue'),
+					meta: { neededPermission: ChannelRolePermissionEnum.ManageTimers, noPadding: true },
 				},
 				{
 					path: '/dashboard/keywords',

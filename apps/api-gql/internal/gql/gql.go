@@ -55,6 +55,7 @@ func New(opts Opts) *Gql {
 			},
 		},
 	)
+
 	srv.Use(otelgqlgen.Middleware())
 
 	if opts.Config.AppEnv != "production" {

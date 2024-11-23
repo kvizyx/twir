@@ -42,11 +42,15 @@ var moderationFunctionsMapping = map[model.ModerationSettingsType]func(
 	model.ModerationSettingsTypeLanguage:    (*MessageHandler).moderationLanguageParser,
 }
 
+var excludedModerationBadges = []string{"BROADCASTER", "MODERATOR"}
+
 func (c *MessageHandler) handleModeration(ctx context.Context, msg handleMessage) error {
 	badges := createUserBadges(msg.Badges)
 
-	if lo.Some(badges, []string{"broadcaster", "moderator"}) {
-		return nil
+	for _, b := range badges {
+		if slices.Contains(excludedModerationBadges, b) {
+			return nil
+		}
 	}
 
 	settings, err := c.getChannelModerationSettings(ctx, msg.BroadcasterUserId)
@@ -172,7 +176,14 @@ func (c *MessageHandler) getChannelModerationSettings(ctx context.Context, chann
 		return nil, err
 	}
 
-	c.redis.Set(ctx, cacheKey, settings, 24*time.Hour)
+	settingsBytes, err := json.Marshal(settings)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := c.redis.Set(ctx, cacheKey, settingsBytes, 24*time.Hour).Err(); err != nil {
+		return nil, err
+	}
 
 	return settings, nil
 }
@@ -211,15 +222,15 @@ func (c *MessageHandler) moderationHandleResult(
 		}
 
 		if msg.DbUser.Stats != nil && !userHasRole {
-			if msg.DbUser.Stats.Watched >= r.RequiredWatchTime {
+			if r.RequiredWatchTime > 0 && msg.DbUser.Stats.Watched >= r.RequiredWatchTime {
 				userHasRole = true
 			}
 
-			if msg.DbUser.Stats.Messages >= r.RequiredMessages {
+			if r.RequiredMessages > 0 && msg.DbUser.Stats.Messages >= r.RequiredMessages {
 				userHasRole = true
 			}
 
-			if msg.DbUser.Stats.UsedChannelPoints >= r.RequiredUsedChannelPoints {
+			if r.RequiredUsedChannelPoints > 0 && msg.DbUser.Stats.UsedChannelPoints >= r.RequiredUsedChannelPoints {
 				userHasRole = true
 			}
 		}

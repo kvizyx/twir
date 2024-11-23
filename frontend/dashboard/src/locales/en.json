@@ -57,7 +57,10 @@
     "userSelected": "{count} users selected",
     "userSelectPlaceholder": "Select user|Select users",
     "userNotFound": "No users found",
-		"settings": "Settings"
+		"settings": "Settings",
+    "create": "Create",
+    "edit": "Edit",
+    "noData": "No data"
   },
   "sidebar": {
     "dashboard": "Dashboard",
@@ -129,7 +132,7 @@
         }
       },
       "aliases": {
-        "label": "Aliases"
+        "label": "Additional names"
       },
       "gameCategories": {
         "label": "Enable command only in certain categories (leave empty for disable)"
@@ -137,6 +140,7 @@
       "expiration": {
         "label": "Expiration",
         "actionsLabel": "Action on expire",
+        "defaultWarning": "Expiration cannot be set for default command",
         "actions": {
           "delete": "Command will be deleted",
           "disable": "Command will be disabled"
@@ -159,7 +163,9 @@
         "name": "Roles",
         "placeholder": "Select roles to grant permissions to use commands",
         "deniedUsers": "Users, who cannot use that command.",
-        "allowedUsers": "Users, who can bypass roles restriction for that command."
+        "allowedUsers": "Users, who can bypass roles restriction for that command.",
+        "exceptions": "Exceptions",
+        "blocked": "Blocked users"
       },
       "restrictions": {
         "name": "Restrictions by stats",
@@ -672,8 +678,8 @@
   "timers": {
     "table": {
       "columns": {
-        "intervalInMinutes": "Interval (in minutes)",
-        "intervalInMessages": "Interval (in chat messages, set 0 to disable)"
+        "intervalInMinutes": "Interval in minutes",
+        "intervalInMessages": "Chat lines interval"
       }
     },
     "modal": {
