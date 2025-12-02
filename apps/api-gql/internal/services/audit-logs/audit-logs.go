@@ -106,7 +106,7 @@ func (c *Service) Subscribe(ctx context.Context, channelID string) (chan entity.
 			case auditLog := <-auditLogs.Channel():
 				channel <- entity.AuditLog{
 					ID:            auditLog.ID,
-					TableName:     auditLog.Table,
+					TableName:     auditLog.System,
 					OperationType: entity.AuditOperationType(auditLog.OperationType),
 					OldValue:      auditLog.OldValue.Ptr(),
 					NewValue:      auditLog.NewValue.Ptr(),

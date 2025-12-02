@@ -163,15 +163,12 @@ func (c *Service) Create(ctx context.Context, input CreateInput) (entity.Command
 
 	_ = c.auditRecorder.RecordCreateOperation(
 		ctx,
-		audit.CreateOperation{
-			Metadata: audit.OperationMetadata{
-				System:    "channels_commands",
-				ActorID:   &input.ActorID,
-				ChannelID: &input.ChannelID,
-				ObjectID:  lo.ToPtr(convertedCommand.ID.String()),
-			},
-			NewValue: convertedCommand,
+		audit.OperationMetadata{
+			ActorID:   input.ActorID,
+			ChannelID: input.ChannelID,
+			ObjectID:  convertedCommand.ID.String(),
 		},
+		convertedCommand,
 	)
 
 	return convertedCommand, nil

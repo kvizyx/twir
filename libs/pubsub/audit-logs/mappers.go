@@ -8,7 +8,7 @@ import (
 func fromBusNewAuditLogMessage(msg busauditlog.NewAuditLogMessage) AuditLog {
 	return AuditLog{
 		ID:            msg.ID,
-		Table:         msg.Table,
+		System:        msg.Table,
 		OperationType: msg.OperationType,
 		OldValue:      null.StringFromPtr(msg.OldValue),
 		NewValue:      null.StringFromPtr(msg.NewValue),
@@ -22,7 +22,7 @@ func fromBusNewAuditLogMessage(msg busauditlog.NewAuditLogMessage) AuditLog {
 func toBusNewAuditLogMessage(auditLog AuditLog) busauditlog.NewAuditLogMessage {
 	return busauditlog.NewAuditLogMessage{
 		ID:            auditLog.ID,
-		Table:         auditLog.Table,
+		Table:         auditLog.System,
 		OperationType: auditLog.OperationType,
 		OldValue:      auditLog.OldValue.Ptr(),
 		NewValue:      auditLog.NewValue.Ptr(),

@@ -8,7 +8,7 @@ import (
 
 	"github.com/avito-tech/go-transaction-manager/trm/v2"
 	"github.com/google/uuid"
-	"github.com/samber/lo"
+	"github.com/twirapp/twir/apps/api-gql/internal/entity"
 	"github.com/twirapp/twir/apps/api-gql/internal/services/commands_responses"
 	"github.com/twirapp/twir/libs/audit"
 	generic_cacher "github.com/twirapp/twir/libs/cache/generic-cacher"
@@ -24,16 +24,21 @@ type Opts struct {
 	TrManager                trm.Manager
 	CommandsRepository       commands.Repository
 	CommandsResponsesService *commands_responses.Service
-	AuditRecorder            audit.Recorder
+	AuditRecordHandler       audit.RecorderHandler
 	CachedCommandsClient     *generic_cacher.GenericCacher[[]commandswithgroupsandresponsesmodel.CommandWithGroupAndResponses]
 }
 
 func New(opts Opts) *Service {
+	auditRecorder := audit.NewRecorder[entity.Command](
+		audit.SystemChannelsCommands,
+		opts.AuditRecordHandler,
+	)
+
 	return &Service{
 		commandsRepository:       opts.CommandsRepository,
 		commandsResponsesService: opts.CommandsResponsesService,
 		trManager:                opts.TrManager,
-		auditRecorder:            opts.AuditRecorder,
+		auditRecorder:            auditRecorder,
 		cachedCommandsClient:     opts.CachedCommandsClient,
 	}
 }
@@ -42,7 +47,7 @@ type Service struct {
 	trManager                trm.Manager
 	commandsRepository       commands.Repository
 	commandsResponsesService *commands_responses.Service
-	auditRecorder            audit.Recorder
+	auditRecorder            audit.Recorder[entity.Command]
 	cachedCommandsClient     *generic_cacher.GenericCacher[[]commandswithgroupsandresponsesmodel.CommandWithGroupAndResponses]
 }
 
@@ -116,15 +121,12 @@ func (c *Service) Delete(ctx context.Context, input DeleteInput) error {
 
 	_ = c.auditRecorder.RecordDeleteOperation(
 		ctx,
-		audit.DeleteOperation{
-			Metadata: audit.OperationMetadata{
-				System:    "channels_commands",
-				ActorID:   &input.ActorID,
-				ChannelID: &input.ChannelID,
-				ObjectID:  lo.ToPtr(command.ID.String()),
-			},
-			OldValue: command,
+		audit.OperationMetadata{
+			ActorID:   input.ActorID,
+			ChannelID: input.ChannelID,
+			ObjectID:  command.ID.String(),
 		},
+		c.modelToEntity(command),
 	)
 
 	return nil

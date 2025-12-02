@@ -1,4 +1,4 @@
-package recorder
+package recordhandler
 
 import (
 	"github.com/twirapp/twir/libs/audit"

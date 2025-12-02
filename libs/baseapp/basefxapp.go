@@ -53,17 +53,17 @@ func CreateBaseApp(opts Opts) fx.Option {
 				fx.As(new(auditlogsrepository.Repository)),
 			),
 			fx.Annotate(
-				recorder.NewDatabase,
+				recordhandler.NewDatabase,
 				fx.As(new(audit.Recorder)),
 				fx.ResultTags(`group:"audit-recorders"`),
 			),
 			fx.Annotate(
-				recorder.NewPubSub,
+				recordhandler.NewPubSub,
 				fx.As(new(audit.Recorder)),
 				fx.ResultTags(`group:"audit-recorders"`),
 			),
 			fx.Annotate(
-				recorder.NewFxFanout,
+				recordhandler.NewFxFanout,
 				fx.As(new(audit.Recorder)),
 			),
 			func(r *redis.Client) kv.KV {
